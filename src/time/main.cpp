@@ -7,9 +7,10 @@
 #define EPD_CS 5
 #define EPD_SCK 18
 #define EPD_MOSI 23
-
 #define SCREEN_W 200
 #define SCREEN_H 200
+#define START_HOUR 15
+#define START_MINUTE 48
 
 GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(GxEPD2_154_D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));
 
@@ -18,10 +19,22 @@ struct ClockTime {
     int minute;
 };
 
+RTC_DATA_ATTR int currentHour = START_HOUR;
+RTC_DATA_ATTR int currentMinute = START_MINUTE;
+RTC_DATA_ATTR bool initialized = false;
+
 ClockTime getTime() {
+    if (initialized) {
+        currentMinute++;
+        if (currentMinute >= 60) {
+            currentMinute = 0;
+            currentHour = (currentHour + 1) % 24;
+        }
+    }
+    initialized = true;
     ClockTime t;
-    t.hour = 17;
-    t.minute = 25;
+    t.hour = currentHour;
+    t.minute = currentMinute;
     return t;
 }
 
@@ -55,14 +68,9 @@ void setup() {
     do {
         drawClock(t);
     } while (display.nextPage());
+    esp_sleep_enable_timer_wakeup(60ULL * 1000000ULL);
+    esp_deep_sleep_start();
 }
 
 void loop() {
-    delay(60000);
-    ClockTime t = getTime();
-    display.setPartialWindow(0, 0, SCREEN_W, SCREEN_H);
-    display.firstPage();
-    do {
-        drawClock(t);
-    } while (display.nextPage());
 }
