@@ -9,8 +9,8 @@
 #define EPD_MOSI 23
 #define SCREEN_W 200
 #define SCREEN_H 200
-#define START_HOUR 15
-#define START_MINUTE 48
+#define START_HOUR 16 /*set*/
+#define START_MINUTE 50
 
 GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(GxEPD2_154_D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));
 
@@ -60,6 +60,7 @@ void drawClock(ClockTime t) {
 }
 
 void setup() {
+    uint64_t startUs = esp_timer_get_time();
     display.init();
     display.setRotation(0);
     ClockTime t = getTime();
@@ -68,7 +69,12 @@ void setup() {
     do {
         drawClock(t);
     } while (display.nextPage());
-    esp_sleep_enable_timer_wakeup(60ULL * 1000000ULL);
+    uint64_t elapsedUs = esp_timer_get_time() - startUs;
+    uint64_t sleepUs = 60ULL * 1000000ULL;
+    if (elapsedUs < sleepUs) {
+        sleepUs -= elapsedUs;
+    }
+    esp_sleep_enable_timer_wakeup(sleepUs);
     esp_deep_sleep_start();
 }
 
