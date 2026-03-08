@@ -1,6 +1,5 @@
 #include <GxEPD2_BW.h>
-#include <Fonts/FreeMonoBold9pt7b.h>
-#include <Fonts/FreeMonoBold24pt7b.h>
+#include "BigClock.h"
 
 #define EPD_BUSY 17
 #define EPD_RST 16
@@ -17,38 +16,34 @@ GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(GxEPD2_154_D67(EPD_CS,
 struct ClockTime {
     int hour;
     int minute;
-    int second;
 };
 
 ClockTime getTime() {
     ClockTime t;
-    t.hour = 12;
-    t.minute = 0;
-    t.second = 0;
+    t.hour = 17;
+    t.minute = 25;
     return t;
 }
 
 void drawClock(ClockTime t) {
-    char timeBuf[6];
-    char secBuf[10];
-    snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d", t.hour, t.minute);
-    snprintf(secBuf, sizeof(secBuf), ":%02d", t.second);
+    char hourBuf[3];
+    char minBuf[3];
+    snprintf(hourBuf, sizeof(hourBuf), "%02d", t.hour);
+    snprintf(minBuf, sizeof(minBuf), "%02d", t.minute);
     int16_t x1, y1;
-    uint16_t tw, th, sw, sh;
-    display.setFont(&FreeMonoBold24pt7b);
-    display.getTextBounds(timeBuf, 0, 0, &x1, &y1, &tw, &th);
-    int timeX = (SCREEN_W - tw) / 2 - x1;
-    int timeY = (SCREEN_H / 2) - (th / 2) - y1;
-    display.setFont(&FreeMonoBold9pt7b);
-    display.getTextBounds(secBuf, 0, 0, &x1, &y1, &sw, &sh);
+    uint16_t tw, th;
+    display.setFont(&BigClock);
+    display.getTextBounds("00", 0, 0, &x1, &y1, &tw, &th);
+    int gap = 10;
+    int totalH = th * 2 + gap;
+    int startY = (SCREEN_H - totalH) / 2 - y1;
+    int startX = (SCREEN_W - tw) / 2 - x1;
     display.fillScreen(GxEPD_WHITE);
     display.setTextColor(GxEPD_BLACK);
-    display.setFont(&FreeMonoBold24pt7b);
-    display.setCursor(timeX, timeY);
-    display.print(timeBuf);
-    display.setFont(&FreeMonoBold9pt7b);
-    display.setCursor((SCREEN_W - sw) / 2 - x1, timeY + th + 4);
-    display.print(secBuf);
+    display.setCursor(startX, startY);
+    display.print(hourBuf);
+    display.setCursor(startX, startY + th + gap);
+    display.print(minBuf);
 }
 
 void setup() {
